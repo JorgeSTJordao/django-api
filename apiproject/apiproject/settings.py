@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "rest_framework",
+    "oauth2_provider",
     "drf_yasg",
     "api"
 ]
@@ -53,6 +54,7 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "oauth2_provider.middleware.OAuth2TokenMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
@@ -134,20 +136,86 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+# OAuth2 settings
+OAUTH2_PROVIDER = {
+    'SCOPES': {
+        'read': 'Read scope',
+        'write': 'Write scope',
+    },
+    'ACCESS_TOKEN_EXPIRE_SECONDS': 3600,
+    'REFRESH_TOKEN_EXPIRE_SECONDS': 86400,
+    'OAUTH2_BACKEND_CLASS': 'oauth2_provider.oauth2_backends.JSONOAuthLibCore',
+    'ALLOWED_REDIRECT_URI_SCHEMES': ['http', 'https'],
+    'AUTHORIZATION_CODE_EXPIRE_SECONDS': 60,
+    'REQUEST_APPROVAL_PROMPT': 'auto',
+    'ERROR_RESPONSE_WITH_SCOPES': True,
+    'GRANT_TYPE_MAPPING': {
+        'client_credentials': 'oauth2_provider.grant_types.ClientCredentialsGrantType',
+    },
+    'ALLOWED_GRANT_TYPES': (
+        'client_credentials',
+    ),
+    'DEFAULT_SCOPES': ['read', 'write'],
+    'SCOPES_BACKEND_CLASS': 'oauth2_provider.scopes.SettingsScopes',
+    'PKCE_REQUIRED': False,
+    'CLIENT_ID_GENERATOR_CLASS': 'oauth2_provider.generators.ClientIdGenerator',
+    'CLIENT_SECRET_GENERATOR_CLASS': 'oauth2_provider.generators.ClientSecretGenerator',
+    'OAUTH2_VALIDATOR_CLASS': 'oauth2_provider.oauth2_validators.OAuth2Validator',
+    'READ_SCOPE': 'read',
+    'WRITE_SCOPE': 'write',
+}
+
 # REST Framework settings
 REST_FRAMEWORK = {
-    'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.AllowAny'
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'oauth2_provider.contrib.rest_framework.OAuth2Authentication',
     ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],
+    'OAUTH2_PROVIDER': {
+        'OAUTH2_BACKEND_CLASS': 'oauth2_provider.oauth2_backends.JSONOAuthLibCore',
+        'ACCESS_TOKEN_EXPIRE_SECONDS': 3600,
+    }
 }
+
+# Configuração para permitir acesso à rota do token
+OAUTH2_PROVIDER_APPLICATION_MODEL = 'oauth2_provider.Application'
+OAUTH2_PROVIDER_ACCESS_TOKEN_MODEL = 'oauth2_provider.AccessToken'
+OAUTH2_PROVIDER_GRANT_MODEL = 'oauth2_provider.Grant'
+OAUTH2_PROVIDER_REFRESH_TOKEN_MODEL = 'oauth2_provider.RefreshToken'
 
 # Swagger settings
 SWAGGER_SETTINGS = {
     'USE_SESSION_AUTH': False,
     'SECURITY_DEFINITIONS': {
-        'Basic': {
-            'type': 'basic'
+        'OAuth2': {
+            'type': 'oauth2',
+            'flow': 'application',
+            'tokenUrl': '/o/token/',
+            'scopes': {
+                'read': 'Read scope',
+                'write': 'Write scope',
+            }
+        },
+        'Bearer': {
+            'type': 'apiKey',
+            'name': 'Authorization',
+            'in': 'header'
         }
     },
+    'SECURITY': [
+        {
+            'OAuth2': ['read', 'write']
+        },
+        {
+            'Bearer': []
+        }
+    ],
     'VALIDATOR_URL': None,
+    'OAUTH2_CONFIG': {
+        'clientId': '',
+        'clientSecret': '',
+        'appName': 'API de Usuários'
+    }
 }
