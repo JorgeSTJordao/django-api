@@ -6,6 +6,8 @@ from .serializers import YouTubeVideoSerializer
 from googleapiclient.discovery import build
 import os
 from dotenv import load_dotenv
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
 
 # Carrega as variáveis de ambiente
 load_dotenv()
@@ -23,6 +25,23 @@ class YouTubeViewSet(viewsets.ViewSet):
             raise ValueError("Chave da API do YouTube não encontrada")
         return build('youtube', 'v3', developerKey=api_key)
 
+    @swagger_auto_schema(
+        operation_description="Busca vídeos do YouTube relacionados a um jogo específico",
+        manual_parameters=[
+            openapi.Parameter(
+                'game',
+                openapi.IN_QUERY,
+                description="Nome do jogo para buscar vídeos",
+                type=openapi.TYPE_STRING,
+                required=True
+            )
+        ],
+        responses={
+            200: YouTubeVideoSerializer(many=True),
+            400: "Parâmetro 'game' não fornecido",
+            500: "Erro interno do servidor"
+        }
+    )
     @action(detail=False, methods=['get'])
     def search_videos(self, request):
         """
