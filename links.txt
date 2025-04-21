@@ -1,8 +1,2 @@
 Create UI for the API
 https://swagger.io/tools/swagger-ui/
-
-Client UI
-https://flask.palletsprojects.com/en/stable/
-
-Generate data:
-https://sqldatagenerator.com/generator
